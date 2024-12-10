@@ -9,21 +9,12 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      accountNumber: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-      },
       balance: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
         defaultValue: 0.0,
       },
-      accountType: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      userId: {
+      user_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },

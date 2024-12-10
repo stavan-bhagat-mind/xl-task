@@ -3,13 +3,6 @@ const IndexRoute = require("./Routers/IndexRoute");
 const Express = require("express");
 const app = Express();
 
-// const { readXLData } = require("./utility/helper");
-// console.log(
-//   readXLData(
-//     "https://res.cloudinary.com/dxf4nqcqf/raw/upload/v1733478563/xl-sheets/xl-task_hd1u1i.xlsx"
-//   )
-// );
-// defining port
 const port = process.env.PORT || 7000;
 
 // For parsing the express payloads

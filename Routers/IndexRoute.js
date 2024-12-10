@@ -1,10 +1,10 @@
 const IndexRoute = require("express").Router();
-// const userRoute = require("../Routers/UserRouter");
-const dataRoute = require("../Routers/dataRoute");
-const {LoggerMiddleware} = require("../Middlewares/LoggerMiddleware");
+const userRoute = require("./userRoute");
+const dataRoute = require("./transactionRoute");
+const accountRoute = require("./accountRoute");
 
-
-// IndexRoute.use("/v1/users", LoggerMiddleware , userRoute);
-IndexRoute.use("/v1/xl-data", LoggerMiddleware , dataRoute);
+IndexRoute.use("/v1/user", userRoute);
+IndexRoute.use("/v1/account", accountRoute);
+IndexRoute.use("/v1/xl-data", dataRoute);
 
 module.exports = IndexRoute;

@@ -13,23 +13,32 @@ module.exports = (sequelize, DataTypes) => {
   }
   Transaction.init(
     {
-      account: {
+      account_id: {
         type: DataTypes.STRING,
         allowNull: false,
       },
       category: {
-        type: DataTypes.STRING,
+        type: DataTypes.ENUM(
+          "Food",
+          "Transport",
+          "Utilities",
+          "Entertainment",
+          "Rent",
+          "Health",
+          "Education",
+          "Miscellaneous"
+        ),
         allowNull: false,
       },
       date: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: false,
       },
       amount: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
       },
-      createdBy: {
+      created_by: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },

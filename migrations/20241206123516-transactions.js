@@ -9,7 +9,7 @@ module.exports = {
         autoIncrement: true,
         allowNull: false,
       },
-      account: {
+      account_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -18,15 +18,20 @@ module.exports = {
         },
       },
       category: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.ENUM(
+          "Food",
+          "Transport",
+          "Utilities",
+          "Entertainment",
+          "Rent",
+          "Health",
+          "Education",
+          "Miscellaneous"
+        ),
         allowNull: false,
-        references: {
-          model: "categories",
-          key: "id",
-        },
       },
       date: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATEONLY,
         allowNull: false,
       },
       amount: {

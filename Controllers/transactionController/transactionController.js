@@ -23,14 +23,14 @@ module.exports.createTransaction = async (req, res) => {
     // const [accountData] = await Promise.all([Models.Account.findAll({})]);
 
     // const data = await Models.User.create({ name });
-    res.send({
+    return res.send({
       data,
       message: "Success",
     });
   } catch (e) {
-    res.send({
-      data: null,
-      message: "Something went wrong.",
-    });
+    // return res.send({
+    //   data: null,
+    //   message: "Something went wrong.",
+    // });
   }
 };

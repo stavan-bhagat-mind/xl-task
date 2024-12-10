@@ -10,10 +10,11 @@ const { http } = require("../utility/constant");
 // module.exports.readXLData = (file) => {
 //   const workbook = XLSX.readFile(file);
 //   const sheet_name_list = workbook.SheetNames;
-//   const xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]], { dateNF: 'YYYY-MM-DD' });
-
+//   const xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]], {
+//     dateNF: "YYYY-MM-DD",
+//   });
 //   // Convert date serial numbers to Date objects
-//   xlData.forEach(row => {
+//   xlData.forEach((row) => {
 //     if (row.date) {
 //       row.date = XLSX.SSF.parse_date_code(row.date);
 //     }
@@ -25,28 +26,40 @@ const { http } = require("../utility/constant");
 
 module.exports.readXLData = async (file, res) => {
   try {
+    const errors = [];
+    const values = [];
     var workbook = XLSX.readFile(file);
-    var sheet_name_list = workbook.SheetNames;
-    var xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const xlData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
 
-    xlData.forEach((row) => {
-      if (row.date) {
-        const excelDate = new Date((row.date - 25569) * 86400 * 1000);
-        // Format the date to DD-MM-YYYY
-        const day = String(excelDate.getDate()).padStart(2, "0");
-        const month = String(excelDate.getMonth() + 1).padStart(2, "0");
-        const year = excelDate.getFullYear();
-        row.date = `${day}-${month}-${year}`;
+    xlData.forEach((row, index) => {
+      const [month, day, year] = row.date.split("-");
+      row.date = new Date(`${year}-${month}-${day}`);
+      const { success, error, value } = validateTransaction(row);
+      if (error) {
+        errors.push({
+          row: index + 1,
+          details: [
+            {
+              //   path: error.details[0].path.join("."),
+              message: error.message.replace(/\"/g, ""),
+              // message: error.message,
+            },
+            // error.details,
+          ],
+        });
+      } else {
+        values.push(value);
       }
     });
     // data = validateTransaction(xlData);
-    const { success, errors, value } = validateTransaction(xlData);
-    if (success) {
-      return value;
-    } else {
+    // const { success, errors, value } = validateTransaction(xlData);
+    if (errors.length > 0) {
       return errors;
+    } else {
+      return values;
     }
-    return xlData;
+    // return xlData;
   } catch (e) {
     if (e.message) {
       return res.status(http.BAD_REQUEST.code).send({

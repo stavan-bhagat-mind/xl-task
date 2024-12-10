@@ -11,12 +11,14 @@ const dataValue = [
   "Miscellaneous",
 ];
 const validateTransaction = (data) => {
-  const transactionValidationSchema = Joi.array().items({
-    name: Joi.string().required(),
-    category: Joi.valid(...dataValue).required(),
-    date: Joi.date().required(),
-    amount: Joi.number().required(),
-  });
+  const transactionValidationSchema =
+    // Joi.array().items({
+    Joi.object({
+      name: Joi.string().required(),
+      category: Joi.valid(...dataValue).required(),
+      date: Joi.date().required(),
+      amount: Joi.number().required(),
+    });
 
   const { error, value } = transactionValidationSchema.validate(data, {
     abortEarly: false,
@@ -24,14 +26,13 @@ const validateTransaction = (data) => {
   const errors = [];
 
   if (error) {
-    const errors = error.details.map((detail) => ({
-      path: detail.path.join("."),
-      message: detail.message,
-    }));
-    console.log(errors);
+    // const errors = error.details.map((detail) => ({
+    //   path: detail.path.join("."),
+    //   message: detail.message,
+    // }));
+    // console.log(errors);
     return {
-      success: false,
-      errors,
+      error,
     };
   }
 

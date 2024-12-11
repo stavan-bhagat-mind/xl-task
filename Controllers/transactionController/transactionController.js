@@ -24,7 +24,7 @@ module.exports.createTransaction = async (req, res) => {
     // }
     console.log("data------", data);
     // Step 1: Fetch existing accounts
-    const accountData = await Models.Account.findAll({
+    const accountData =   await Models.Account.findAll({
       where: {
         name: { [Op.in]: data[0].accountNames },
         user_id: userId,

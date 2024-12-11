@@ -33,7 +33,7 @@ module.exports.readXLData = async (file, res) => {
     var workbook = XLSX.readFile(file);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const xlData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-
+    console.log("xlData", xlData);
     for (let index = 0; index < xlData.length; index++) {
       if (errors.length >= maxErrors) {
         break;

@@ -10,7 +10,8 @@ const dataValue = [
   "Education",
   "Miscellaneous",
 ];
-const validateTransaction = (data) => {
+
+const validateTransaction = (data, existingEntries) => {
   const transactionValidationSchema =
     // Joi.array().items({
     Joi.object({
@@ -18,50 +19,35 @@ const validateTransaction = (data) => {
       category: Joi.valid(...dataValue).required(),
       date: Joi.date().required(),
       amount: Joi.number().required(),
+    }).custom((value, helpers) => {
+      const uniqueKey = `${value.name}-${
+        value.category
+      }-${value.date.toISOString()}`;
+      if (existingEntries.has(uniqueKey)) {
+        return helpers.error("any.duplicate", {
+          message: `Duplicate entry found for name: ${value.name}, category: ${
+            value.category
+          }, date: ${value.date.toISOString()}`,
+        });
+      }
+      existingEntries.add(uniqueKey);
+      return value;
     });
 
   const { error, value } = transactionValidationSchema.validate(data, {
     abortEarly: false,
+    messages: {
+      "any.duplicate": "{{#message}}",
+    },
   });
-  const errors = [];
-
   if (error) {
-    // const errors = error.details.map((detail) => ({
-    //   path: detail.path.join("."),
-    //   message: detail.message,
-    // }));
-    // console.log(errors);
     return {
+      success: false,
       error,
+      value: data,
     };
   }
 
-  // if (error) {
-  //   const errorMap = {};
-  //   error.details.forEach((detail) => {
-  //     const path = detail.path.join(".");
-  //     const row = parseInt(path.split(".")[0]) + 1;
-  //     const field = path.split(".")[1];
-  //     if (!errorMap[row]) {
-  //       errorMap[row] = {};
-  //     }
-  //     if (!errorMap[row][field]) {
-  //       errorMap[row][field] = detail.message;
-  //     }
-  //   });
-
-  //   const errors = Object.entries(errorMap).map(([row, fields]) => ({
-  //     row,
-  //     errors: Object.entries(fields).map(([field, message]) => ({
-  //       field,
-  //       message,
-  //     })),
-  //   }));
-  //   return {
-  //     success: false,
-  //     errors,
-  //   };
-  // }
   return {
     success: true,
     value,

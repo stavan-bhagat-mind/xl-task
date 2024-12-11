@@ -27,39 +27,57 @@ const { http } = require("../utility/constant");
 module.exports.readXLData = async (file, res) => {
   try {
     const errors = [];
-    const values = [];
+    const maxErrors = 100;
+    const uniqueTransactions = new Set();
+    const values = [{ accountNames: [] }];
     var workbook = XLSX.readFile(file);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const xlData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
 
-    xlData.forEach((row, index) => {
-      const [month, day, year] = row.date.split("-");
-      row.date = new Date(`${year}-${month}-${day}`);
-      const { success, error, value } = validateTransaction(row);
-      if (error) {
+    for (let index = 0; index < xlData.length; index++) {
+      if (errors.length >= maxErrors) {
+        break;
+      }
+
+      const row = xlData[index];
+      if (row.date) {
+        const [month, day, year] = row.date.split("-");
+        row.date = new Date(`${year}-${month}-${day}`);
+      }
+
+      const { success, error, value } = validateTransaction(
+        row,
+        uniqueTransactions
+      );
+
+      if (!success) {
         errors.push({
           row: index + 1,
           details: [
             {
-              //   path: error.details[0].path.join("."),
               message: error.message.replace(/\"/g, ""),
-              // message: error.message,
             },
-            // error.details,
           ],
         });
       } else {
+        values[0].accountNames.push(value.name);
         values.push(value);
       }
-    });
-    // data = validateTransaction(xlData);
-    // const { success, errors, value } = validateTransaction(xlData);
+    }
+
     if (errors.length > 0) {
-      return errors;
+      const errorMessage =
+        errors.length >= maxErrors
+          ? "More than 100 errors found. Please correct the inputs."
+          : "Errors found";
+      return res.status(http.BAD_REQUEST.code).send({
+        success: false,
+        data: errors,
+        message: errorMessage,
+      });
     } else {
       return values;
     }
-    // return xlData;
   } catch (e) {
     if (e.message) {
       return res.status(http.BAD_REQUEST.code).send({

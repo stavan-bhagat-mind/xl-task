@@ -5,7 +5,12 @@ const authenticationMiddleware = require("../Middlewares/authenticationMiddlewar
 const accountRoute = require("express").Router();
 const upload = require("../config/multerConfig");
 
-accountRoute.post("/add", upload.single("file"), createTransaction);
+accountRoute.post(
+  "/add",
+  upload.single("file"),
+  authenticationMiddleware,
+  createTransaction
+);
 //   userRoute.post("/login", loginUser);
 //   userRoute.get("/refresh", authenticationMiddleware, getAuthenticationToken);
 //   userRoute.get("/list", getListOfUsers);

@@ -3,13 +3,12 @@ const { Model } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
   class Transaction extends Model {
-    // static associate(models) {
-    // // define association here
-    // Book.belongsTo(models.Author, {
-    //   source_key: "id",
-    //   foreignKey: "author_id",
-    // });
-    // }
+    static associate(models) {
+      Transaction.belongsTo(models.Account, {
+        source_key: "id",
+        foreignKey: "account_id",
+      });
+    }
   }
   Transaction.init(
     {
@@ -38,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
       },
-      created_by: {
+      user_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },

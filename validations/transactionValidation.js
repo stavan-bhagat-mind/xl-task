@@ -51,6 +51,7 @@ const validateTransaction = (data, existingEntries) => {
   return {
     success: true,
     value,
+    error: null,
   };
 };
 

@@ -13,7 +13,8 @@ module.exports.createTransaction = async (req, res) => {
     const userId = req.userId;
     const data = await readXLData(
       "/Users/mind/Documents/demo/xl task/xl-task.xlsx",
-      res
+      res,
+      userId
     );
 
     // if (errors.length > 0) {
@@ -22,9 +23,9 @@ module.exports.createTransaction = async (req, res) => {
     //     message: "Failed",
     //   });
     // }
-    console.log("data------", data);
-    // Step 1: Fetch existing accounts
-    const accountData =   await Models.Account.findAll({
+
+    // // Step 1: Fetch existing accounts
+    const accountData = await Models.Account.findAll({
       where: {
         name: { [Op.in]: data[0].accountNames },
         user_id: userId,
@@ -36,46 +37,50 @@ module.exports.createTransaction = async (req, res) => {
     accountData.forEach((account) => {
       accountMap[account.dataValues.name] = account.dataValues.id;
     });
+    console.log("data------", data);
+    console.log("accountData", accountData);
+    console.log("accountMap", accountMap);
 
-    // Step 3: Identify missing accounts
-    const missingAccountNames = data[0].accountNames.filter(
-      (name) => !accountMap[name]
-    );
+    // const createdTransactions = await Models.Transaction.findAndCountAll({})
+    // // Step 3: Identify missing accounts
+    // const missingAccountNames = data[0].accountNames.filter(
+    //   (name) => !accountMap[name]
+    // );
 
-    // Step 4: Insert missing accounts
-    const newAccounts = missingAccountNames.map((name) => ({
-      name,
-      user_id: userId,
-    }));
+    // // Step 4: Insert missing accounts
+    // const newAccounts = missingAccountNames.map((name) => ({
+    //   name,
+    //   user_id: userId,
+    // }));
 
-    // Insert new accounts if there are any
-    if (newAccounts.length > 0) {
-      const createdAccounts = await Models.Account.bulkCreate(newAccounts);
-      // Update the accountMap with newly created accounts
-      createdAccounts.forEach((account) => {
-        accountMap[account.dataValues.name] = account.dataValues.id;
-      });
-    }
+    // // Insert new accounts if there are any
+    // if (newAccounts.length > 0) {
+    //   const createdAccounts = await Models.Account.bulkCreate(newAccounts);
+    //   // Update the accountMap with newly created accounts
+    //   createdAccounts.forEach((account) => {
+    //     accountMap[account.dataValues.name] = account.dataValues.id;
+    //   });
+    // }
 
-    // Step 5: Remove the first element (accountNames) from data
-    data.shift();
+    // // Step 5: Remove the first element (accountNames) from data
+    // data.shift();
 
-    // Step 6: Transform the transaction data to include account IDs
-    const transactionData = data.map((transaction) => {
-      return {
-        account_id: accountMap[transaction.name],
-        category: transaction.category,
-        date: transaction.date,
-        amount: transaction.amount,
-        created_by: userId,
-      };
-    });
+    // // Step 6: Transform the transaction data to include account IDs
+    // const transactionData = data.map((transaction) => {
+    //   return {
+    //     account_id: accountMap[transaction.name],
+    //     category: transaction.category,
+    //     date: transaction.date,
+    //     amount: transaction.amount,
+    //     created_by: userId,
+    //   };
+    // });
 
-    // Step 7: Perform the bulk insert for transactions
-    const createdTransactions = await Models.Transaction.bulkCreate(
-      transactionData
-    );
-    console.log("Created Transactions:", createdTransactions);
+    // // Step 7: Perform the bulk insert for transactions
+    // const createdTransactions = await Models.Transaction.bulkCreate(
+    //   transactionData
+    // );
+    // console.log("Created Transactions:", createdTransactions);
     // --------------------------
     // console.log(data[0].accountNames);
     // const accountData = await Models.Account.findAll({

@@ -1,4 +1,5 @@
 const fs = require("fs");
+const { Models } = require("../models/index");
 const path = require("path");
 const axios = require("axios");
 const XLSX = require("xlsx");
@@ -7,25 +8,9 @@ const { salt } = require("../utility/constant");
 const { validateTransaction } = require("../validations/transactionValidation");
 const { http } = require("../utility/constant");
 
-// module.exports.readXLData = (file) => {
-//   const workbook = XLSX.readFile(file);
-//   const sheet_name_list = workbook.SheetNames;
-//   const xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]], {
-//     dateNF: "YYYY-MM-DD",
-//   });
-//   // Convert date serial numbers to Date objects
-//   xlData.forEach((row) => {
-//     if (row.date) {
-//       row.date = XLSX.SSF.parse_date_code(row.date);
-//     }
-//   });
-
-//   return xlData;
-// };
-// ----------------------
-
-module.exports.readXLData = async (file, res) => {
+module.exports.readXLData = async (file, res, userId) => {
   try {
+    const CHUNK_SIZE = 2;
     const errors = [];
     const maxErrors = 100;
     const uniqueTransactions = new Set();
@@ -34,37 +19,94 @@ module.exports.readXLData = async (file, res) => {
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const xlData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
     console.log("xlData", xlData);
-    for (let index = 0; index < xlData.length; index++) {
+
+    for (let index = 0; index < xlData.length; index += CHUNK_SIZE) {
+      const chunk = xlData.slice(index, index + CHUNK_SIZE);
+      for (const transaction of chunk) {
+        if (errors.length >= maxErrors) {
+          break;
+        }
+
+        if (transaction.date) {
+          const [month, day, year] = transaction.date.split("-");
+          transaction.date = new Date(Date.UTC(year, month - 1, day));
+        }
+        const { success, error, value } = validateTransaction(
+          transaction,
+          uniqueTransactions
+        );
+
+        if (!success) {
+          errors.push({
+            row: index + 1,
+            details: [
+              {
+                message: error.message.replace(/\"/g, ""),
+              },
+            ],
+          });
+        } else {
+          values[0].accountNames.push(value.name);
+          values.push(value);
+        }
+      }
       if (errors.length >= maxErrors) {
         break;
       }
-
-      const row = xlData[index];
-      if (row.date) {
-        const [month, day, year] = row.date.split("-");
-        row.date = new Date(`${year}-${month}-${day}`);
-      }
-
-      const { success, error, value } = validateTransaction(
-        row,
-        uniqueTransactions
-      );
-
-      if (!success) {
-        errors.push({
-          row: index + 1,
-          details: [
+      if (values.length > 0) {
+        const conditions = values.slice(1).map((t) => ({
+          [Models.Sequelize.Op.and]: {
+            date: t.date,
+            amount: t.amount,
+            category: t.category,
+          },
+        }));
+        const existingTransactions = await Models.Transaction.findAll({
+          where: {
+            user_id: userId,
+            [Models.Sequelize.Op.or]: conditions,
+          },
+          include: [
             {
-              message: error.message.replace(/\"/g, ""),
+              model: Models.Account,
+              attributes: ["name"],
             },
           ],
+          attributes: ["account_id", "category", "date", "amount", "user_id"],
+          raw: true,
         });
-      } else {
-        values[0].accountNames.push(value.name);
-        values.push(value);
+
+        // Create a map of existing transactions for quick looku
+        existingTransactions.forEach((t) => {
+          const b = `${t["Account.name"]}-${t.category}-${new Date(
+            t.date
+          ).toISOString()}-${t.amount}`;
+        console.log(  uniqueTransactions.has(b))
+          if (
+            uniqueTransactions.has(
+              `${t["Account.name"]}-${t.category}-${new Date(
+                t.date
+              ).toISOString()}-${t.amount}`
+            )
+          ) {
+            errors.push({
+              row: index + idx + 1,
+              details: [
+                {
+                  message: `Duplicate transaction found in database for account: ${
+                    transaction.name
+                  }, date: ${transaction.date.toISOString()}, amount: ${
+                    transaction.amount
+                  }, category: ${transaction.category}`,
+                },
+              ],
+            });
+          }
+        });
+
+        // Check for duplicates and add errors
       }
     }
-
     if (errors.length > 0) {
       const errorMessage =
         errors.length >= maxErrors

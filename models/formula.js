@@ -2,26 +2,17 @@
 const { Model } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  class Account extends Model {}
-  Account.init(
+  class Formula extends Model {}
+  Formula.init(
     {
-      name: {
+      formula: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      balance: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
-        defaultValue: 0.0,
-      },
-      user_id: {
+      created_by: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      synonym: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },  
     },
     {
       sequelize,
@@ -31,9 +22,9 @@ module.exports = (sequelize, DataTypes) => {
       deletedAt: "deleted_at",
       createdAt: "created_at",
       updatedAt: "updated_at",
-      modelName: "Account",
-      tableName: "accounts",
+      modelName: "Formula",
+      tableName: "formulas",
     }
   );
-  return Account;
+  return Formula;
 };

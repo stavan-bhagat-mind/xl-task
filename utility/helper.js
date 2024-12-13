@@ -87,7 +87,7 @@ module.exports.readXLData = async (file, userId) => {
         currentBatch,
         userId,
         errors,
-        range.e.r - currentBatch.length + 1
+        range.e.r - currentBatch.length + 1,uniqueTransactions
       );
     }
 
@@ -105,7 +105,7 @@ module.exports.readXLData = async (file, userId) => {
   }
 };
 
-const processBatch = async (batch, userId, errors, startRow) => {
+const processBatch = async (batch, userId, errors, startRow,uniqueTransactions) => {
   try {
     const conditions = batch.map((t) => ({
       [Models.Sequelize.Op.and]: {

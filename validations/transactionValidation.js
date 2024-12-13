@@ -19,10 +19,11 @@ const validateTransaction = (data, existingEntries) => {
       category: Joi.valid(...dataValue).required(),
       date: Joi.date().required(),
       amount: Joi.number().required(),
+      synonym: Joi.string().min(3).max(8).required(),
     }).custom((value, helpers) => {
       const uniqueKey = `${value.name}-${
         value.category
-      }-${value.date.toISOString()}`;
+      }-${value.date.toISOString()}-${value.amount}`;
       if (existingEntries.has(uniqueKey)) {
         return helpers.error("any.duplicate", {
           message: `Duplicate entry found for name: ${value.name}, category: ${

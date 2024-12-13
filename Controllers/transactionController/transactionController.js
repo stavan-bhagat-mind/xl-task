@@ -1,4 +1,4 @@
-const { Models ,sequelize} = require("../../models");
+const { Models, sequelize } = require("../../models");
 const { readXLData } = require("../../utility/helper");
 const { http } = require("../../utility/constant");
 
@@ -11,7 +11,7 @@ module.exports.createTransaction = async (req, res) => {
     const result = await readXLData(
       "/Users/mind/Documents/demo/xl task/xl-task.xlsx",
       userId
-    ); 
+    );
 
     if (!result.success) {
       const errorMessage =
@@ -49,6 +49,7 @@ module.exports.createTransaction = async (req, res) => {
     const newAccounts = missingAccountNames.map((name) => ({
       name,
       user_id: userId,
+      synonym: name.synonym,
     }));
 
     // Insert new accounts if there are any

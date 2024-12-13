@@ -1,12 +1,8 @@
-const fs = require("fs");
 const { Models } = require("../models/index");
-const path = require("path");
-const axios = require("axios");
 const XLSX = require("xlsx");
 const bcrypt = require("bcrypt");
 const { salt } = require("../utility/constant");
 const { validateTransaction } = require("../validations/transactionValidation");
-const { http } = require("../utility/constant");
 
 const excelDateToJSDate = (excelDate) => {
   // Excel dates are number of days since Dec 30, 1899
@@ -44,15 +40,15 @@ module.exports.readXLData = async (file, userId) => {
     // Process rows in batches
     const batchSize = 1000;
     let currentBatch = [];
-
+    // Iterate over each row in the worksheet
     for (let row = range.s.r + 1; row <= range.e.r; row++) {
       const rowData = {};
-
+      // Iterate over each column in the row
       for (let col = range.s.c; col <= range.e.c; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
         const cell = worksheet[cellAddress];
         if (cell && headers[col]) {
-          rowData[headers[col]] = cell.v;
+          rowData[headers[col]] = cell.v; // Store cell value in rowData
         }
       }
 
@@ -74,9 +70,10 @@ module.exports.readXLData = async (file, userId) => {
         });
       } else {
         values[0].accountNames.push(value.name);
+        values.push(value);
         currentBatch.push(value);
       }
-
+      // Process the batch if it reaches the batch size
       if (currentBatch.length >= batchSize) {
         await processBatch(currentBatch, userId, errors, row - batchSize + 1);
         currentBatch = [];
@@ -84,7 +81,7 @@ module.exports.readXLData = async (file, userId) => {
 
       if (errors.length >= maxErrors) break;
     }
-
+    // Process any remaining transactions in the current batch
     if (currentBatch.length > 0) {
       await processBatch(
         currentBatch,
@@ -117,7 +114,7 @@ const processBatch = async (batch, userId, errors, startRow) => {
         category: t.category,
       },
     }));
-
+    // Find existing transactions in the database
     const existingTransactions = await Models.Transaction.findAll({
       where: {
         user_id: userId,
@@ -132,7 +129,7 @@ const processBatch = async (batch, userId, errors, startRow) => {
       attributes: ["account_id", "category", "date", "amount", "user_id"],
       raw: true,
     });
-
+    // Check for duplicate transactions
     existingTransactions.forEach((transaction, idx) => {
       const key = `${transaction["Account.name"]}-${
         transaction.category
@@ -160,117 +157,6 @@ const processBatch = async (batch, userId, errors, startRow) => {
     });
   }
 };
-
-//     for (let index = 0; index < xlData.length; index += CHUNK_SIZE) {
-//       const chunk = xlData.slice(index, index + CHUNK_SIZE);
-//       for (const transaction of chunk) {
-//         if (errors.length >= maxErrors) {
-//           break;
-//         }
-
-//         if (transaction.date) {
-//           const [month, day, year] = transaction.date.split("-");
-//           transaction.date = new Date(Date.UTC(year, month - 1, day));
-//         }
-//         const { success, error, value } = validateTransaction(
-//           transaction,
-//           uniqueTransactions
-//         );
-
-//         if (!success) {
-//           errors.push({
-//             row: index + 1,
-//             details: [
-//               {
-//                 message: error.message.replace(/\"/g, ""),
-//               },
-//             ],
-//           });
-//         } else {
-//           values[0].accountNames.push(value.name);
-//           values.push(value);
-//         }
-//       }
-//       if (errors.length >= maxErrors) {
-//         break;
-//       }
-//       if (values.length > 0) {
-//         const conditions = values.slice(1).map((t) => ({
-//           [Models.Sequelize.Op.and]: {
-//             date: t.date,
-//             amount: t.amount,
-//             category: t.category,
-//           },
-//         }));
-//         const existingTransactions = await Models.Transaction.findAll({
-//           where: {
-//             user_id: userId,
-//             [Models.Sequelize.Op.or]: conditions,
-//           },
-//           include: [
-//             {
-//               model: Models.Account,
-//               attributes: ["name"],
-//             },
-//           ],
-//           attributes: ["account_id", "category", "date", "amount", "user_id"],
-//           raw: true,
-//         });
-
-//         // Create a map of existing transactions for quick looku
-//         existingTransactions.forEach((t) => {
-//           const b = `${t["Account.name"]}-${t.category}-${new Date(
-//             t.date
-//           ).toISOString()}-${t.amount}`;
-//           console.log(uniqueTransactions.has(b));
-//           if (
-//             uniqueTransactions.has(
-//               `${t["Account.name"]}-${t.category}-${new Date(
-//                 t.date
-//               ).toISOString()}-${t.amount}`
-//             )
-//           ) {
-//             errors.push({
-//               row: index + idx + 1,
-//               details: [
-//                 {
-//                   message: `Duplicate transaction found in database for account: ${
-//                     transaction.name
-//                   }, date: ${transaction.date.toISOString()}, amount: ${
-//                     transaction.amount
-//                   }, category: ${transaction.category}`,
-//                 },
-//               ],
-//             });
-//           }
-//         });
-
-//         // Check for duplicates and add errors
-//       }
-//     }
-//     if (errors.length > 0) {
-//       const errorMessage =
-//         errors.length >= maxErrors
-//           ? "More than 100 errors found. Please correct the inputs."
-//           : "Errors found";
-//       return res.status(http.BAD_REQUEST.code).send({
-//         success: false,
-//         data: errors,
-//         message: errorMessage,
-//       });
-//     } else {
-//       return values;
-//     }
-//   } catch (e) {
-//     if (e.message) {
-//       return res.status(http.BAD_REQUEST.code).send({
-//         success: false,
-//         data: null,
-//         message: e.message,
-//       });
-//     }
-//   }
-// };
 
 module.exports.hashConvert = async (plainPassword) => {
   return new Promise((resolve, reject) => {

@@ -24,14 +24,20 @@ if (!process.sequelize) {
     );
   }
 
-  try {
-    process.sequelize.authenticate();
-    console.log("Connection has been established successfully.");
-  } catch (error) {
-    console.error("Unable to connect to the database:", error);
-  }
+  sequelize = process.sequelize; // Assign the Sequelize instance to the variable here
+
+  // Authenticate after the assignment
+  sequelize
+    .authenticate()
+    .then(() => {
+      console.log("Connection has been established successfully.");
+    })
+    .catch((error) => {
+      console.error("Unable to connect to the database:", error);
+    });
 }
 
+// Use `sequelize` now assigned from `process.sequelize`
 fs.readdirSync(__dirname)
   .filter((file) => {
     return (
@@ -40,7 +46,7 @@ fs.readdirSync(__dirname)
   })
   .forEach((file) => {
     const model = require(path.join(__dirname, file))(
-      process.sequelize,
+      sequelize, // Pass the `sequelize` variable
       Sequelize.DataTypes
     );
     db[model.name] = model;
@@ -52,10 +58,11 @@ Object.keys(db).forEach((modelName) => {
   }
 });
 
-db.sequelize = sequelize;
+// Store the sequelize instance in the exported object
+db.sequelize = sequelize; // Ensure db.sequelize points to the correct instance
 db.Sequelize = Sequelize;
 
 module.exports = {
-  sequelize,
+  sequelize: db.sequelize,
   Models: db,
 };

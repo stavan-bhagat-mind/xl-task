@@ -7,6 +7,7 @@ const messages = {
   REMOVED: "removed successfully.",
   UPDATED: "updated successfully.",
   EMAIL_SHOULD_BE_UNIQUE: "Email already registered",
+  SYNONYMS_NOT_FOUND: "synonyms does not exists",
 };
 
 module.exports = {

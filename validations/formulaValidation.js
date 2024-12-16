@@ -1,6 +1,7 @@
 const Joi = require("joi");
 
 const validateFormula = (data) => {
+  const synonyms = [];
   const formulaValidationSchema = Joi.object({
     formula: Joi.string()
       .required()
@@ -23,7 +24,7 @@ const validateFormula = (data) => {
         }
         // Extract synonym names
         const synonymPattern = /([a-zA-Z_]+):\d{4}(-\d{2}(-\d{2})?)?/g;
-        const synonyms = [];
+
         let match;
 
         while ((match = synonymPattern.exec(value)) !== null) {
@@ -48,7 +49,7 @@ const validateFormula = (data) => {
       }),
   });
 
-  const { error, value, synonyms } = formulaValidationSchema.validate(data);
+  const { error, value } = formulaValidationSchema.validate(data);
   if (error) {
     return { success: false, error: error.details.map((err) => err.message) };
   }

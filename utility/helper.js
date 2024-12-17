@@ -87,7 +87,8 @@ module.exports.readXLData = async (file, userId) => {
         currentBatch,
         userId,
         errors,
-        range.e.r - currentBatch.length + 1,uniqueTransactions
+        range.e.r - currentBatch.length + 1,
+        uniqueTransactions
       );
     }
 
@@ -105,7 +106,13 @@ module.exports.readXLData = async (file, userId) => {
   }
 };
 
-const processBatch = async (batch, userId, errors, startRow,uniqueTransactions) => {
+const processBatch = async (
+  batch,
+  userId,
+  errors,
+  startRow,
+  uniqueTransactions
+) => {
   try {
     const conditions = batch.map((t) => ({
       [Models.Sequelize.Op.and]: {
@@ -123,6 +130,7 @@ const processBatch = async (batch, userId, errors, startRow,uniqueTransactions) 
       include: [
         {
           model: Models.Account,
+          as: "transactionAccount",
           attributes: ["name"],
         },
       ],
@@ -131,7 +139,7 @@ const processBatch = async (batch, userId, errors, startRow,uniqueTransactions) 
     });
     // Check for duplicate transactions
     existingTransactions.forEach((transaction, idx) => {
-      const key = `${transaction["Account.name"]}-${
+      const key = `${transaction["transactionAccount.name"]}-${
         transaction.category
       }-${new Date(transaction.date).toISOString()}-${transaction.amount}`;
 
@@ -141,7 +149,7 @@ const processBatch = async (batch, userId, errors, startRow,uniqueTransactions) 
           details: [
             {
               message: `Duplicate transaction found in database for account: ${
-                transaction["Account.name"]
+                transaction["transactionAccount.name"]
               }, date: ${new Date(transaction.date).toISOString()}, amount: ${
                 transaction.amount
               }, category: ${transaction.category}`,

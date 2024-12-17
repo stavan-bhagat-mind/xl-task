@@ -2,8 +2,8 @@ const Joi = require("joi");
 
 const validateFormula = (data) => {
   const synonyms = [];
-  const formulaValidationSchema = Joi.object({
-    formula: Joi.string()
+  const formulaValidationSchema = Joi.array().items(
+    Joi.string()
       .required()
       .pattern(/^[a-zA-Z_:\d\s+\-*/()]+/) // Allow only valid formula characters
       .pattern(/[a-zA-Z_]+:\d{4}(-\d{2}(-\d{2})?)?/) // Require at least one synonym:date
@@ -46,8 +46,8 @@ const validateFormula = (data) => {
         "string.empty": "Formula is required.",
         "string.pattern.base":
           "Formula contains invalid characters or structure.",
-      }),
-  });
+      })
+  );
 
   const { error, value } = formulaValidationSchema.validate(data);
   if (error) {

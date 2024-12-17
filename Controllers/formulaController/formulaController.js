@@ -7,6 +7,7 @@ const { validateFormula } = require("../../validations/formulaValidation");
 module.exports.addFormula = async (req, res) => {
   try {
     const userId = req.userId;
+    const dbTransaction = await sequelize.transaction();
     const { value, error, synonyms } = validateFormula(req.body);
     if (error) {
       return res.status(http.BAD_REQUEST.code).send({
@@ -34,17 +35,28 @@ module.exports.addFormula = async (req, res) => {
         message: messages.SYNONYMS_NOT_FOUND,
       });
     }
-    const data = await Models.Formula.create({
-      formula: value.formula,
-      created_by: userId,
+    const formulas = value.map((value) => {
+      return { formula: value, created_by: userId };
     });
 
+    const data = await Models.Formula.bulkCreate(formulas, {
+      transaction: dbTransaction,
+    });
+    await dbTransaction.commit();
     return res.status(http.OK.code).send({
       success: true,
-      data: value,
+      data,
       message: http.OK.message,
     });
   } catch (e) {
+    await dbTransaction.rollback();
+    if (e.name === "SequelizeUniqueConstraintError") {
+      return res.status(400).json({
+        error: "Unique Constraint Error",
+        message: messages.FORMULA_SHOULD_BE_UNIQUE,
+        // details: e.errors.map((e) => e.message),
+      });
+    }
     if (e.message) {
       return res.status(http.BAD_REQUEST.code).send({
         success: false,

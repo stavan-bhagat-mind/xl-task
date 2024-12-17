@@ -2,7 +2,7 @@ require("dotenv").config();
 const IndexRoute = require("./Routers/IndexRoute");
 const Express = require("express");
 const app = Express();
-
+require("./config/cronConfig");
 const port = process.env.PORT || 7000;
 
 // For parsing the express payloads

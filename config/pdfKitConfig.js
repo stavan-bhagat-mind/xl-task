@@ -4,7 +4,7 @@ const path = require("path");
 
 const reportsDir = path.join(__dirname, "reports");
 if (!fs.existsSync(reportsDir)) {
-  fs.mkdirSync(reportsDir);
+  fs.mkdirSync(reportsDir); 
 }
 
 const createPDF = (report, reportType) => {

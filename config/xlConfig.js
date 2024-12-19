@@ -1,4 +1,4 @@
-const ExcelJS = require("exceljs");
+const XlsxPopulate = require("xlsx-populate");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
@@ -10,102 +10,73 @@ const createFormulaExcel = async (formulaResults, password) => {
     fs.mkdirSync(reportsDir);
   }
 
-  const workbook = new ExcelJS.Workbook();
+  // Create a new workbook
+  const workbook = await XlsxPopulate.fromBlankAsync();
+  const sheet = workbook.sheet(0);
 
-  // Set workbook properties
-  workbook.properties.password = password; // Set workbook-level password
-  workbook.properties.protection = {
-    lockStructure: true,
-    lockWindows: true,
-  };
+  // Rename the sheet
+  sheet.name("Formula Calculations");
 
-  const worksheet = workbook.addWorksheet("Formula Calculations");
-
-  // Add columns and data structure
-  worksheet.columns = [
-    { header: "Original Formula", key: "formula", width: 40 },
-    { header: "Evaluated Formula", key: "evaluatedFormula", width: 40 },
-    { header: "Result", key: "result", width: 15 },
-  ];
-
-  // Style the header row
-  worksheet.getRow(1).font = { bold: true };
-  worksheet.getRow(1).fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "2C3E50" },
-  };
-  worksheet.getRow(1).font = { color: { argb: "FFFFFF" }, bold: true };
+  // Set column widths
+  sheet.column("A").width(40);
+  sheet.column("B").width(40);
+  sheet.column("C").width(15);
 
   // Add title
-  worksheet.insertRow(1, ["Formula Calculations Report"]);
-  worksheet.mergeCells("A1:C1");
-  worksheet.getRow(1).font = { size: 16, bold: true };
-  worksheet.getRow(1).alignment = { horizontal: "center" };
+  sheet.cell("A1").value("Formula Calculations Report").style({
+    fontSize: 16,
+    bold: true,
+    horizontalAlignment: "center",
+  });
+  sheet.range("A1:C1").merged(true);
 
   // Add generation date
-  worksheet.insertRow(2, [`Generated on: ${new Date().toLocaleDateString()}`]);
-  worksheet.mergeCells("A2:C2");
-  worksheet.getRow(2).font = { size: 10, color: { argb: "666666" } };
-  worksheet.getRow(2).alignment = { horizontal: "right" };
+  sheet
+    .cell("A2")
+    .value(`Generated on: ${new Date().toLocaleDateString()}`)
+    .style({
+      fontSize: 10,
+      fontColor: "666666",
+      horizontalAlignment: "right",
+    });
+  sheet.range("A2:C2").merged(true);
+
+  // Add headers
+  const headers = ["Original Formula", "Evaluated Formula", "Result"];
+  headers.forEach((header, index) => {
+    sheet
+      .cell(3, index + 1)
+      .value(header)
+      .style({
+        bold: true,
+        fill: "2C3E50",
+        fontColor: "FFFFFF",
+      });
+  });
 
   // Add data rows
-  let currentRow = 4;
   formulaResults.forEach((result, index) => {
-    worksheet.addRow({
-      formula: result.formula,
-      evaluatedFormula: result.evaluatedFormula,
-      result: result.result,
-    });
+    const rowNum = index + 4;
+    sheet.cell(rowNum, 1).value(result.formula);
+    sheet.cell(rowNum, 2).value(result.evaluatedFormula);
+    sheet
+      .cell(rowNum, 3)
+      .value(result.result)
+      .style({ numberFormat: "#,##0.00" });
 
-    // Lock all cells in this row
-    worksheet.lastRow.eachCell((cell) => {
-      cell.protection = {
-        locked: true,
-      };
-    });
-
-    // Alternate row colors
+    // Add alternate row coloring
     if (index % 2 === 0) {
-      worksheet.getRow(currentRow).fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "F8F9FA" },
-      };
+      sheet.range(`A${rowNum}:C${rowNum}`).style({
+        fill: "F8F9FA",
+      });
     }
-    currentRow++;
   });
 
-  // Add number formatting for the Result column
-  worksheet.getColumn(3).numFmt = "#,##0.00";
-
-  // Add cell styling and protection
-  worksheet.eachRow((row) => {
-    row.eachCell((cell) => {
-      cell.protection = { locked: true };
-      cell.alignment = {
-        vertical: "middle",
-        horizontal: "left",
-        wrapText: true,
-      };
-    });
-  });
-
-  // Enable worksheet protection
-  worksheet.protect(password, {
-    selectLockedCells: true,
-    selectUnlockedCells: true,
-    formatCells: false,
-    formatColumns: false,
-    formatRows: false,
-    insertColumns: false,
-    insertRows: false,
-    insertHyperlinks: false,
-    deleteColumns: false,
-    deleteRows: false,
-    sort: false,
-    autoFilter: false,
-    pivotTables: false,
+  // Apply general styling to all cells
+  const dataRange = sheet.range(`A1:C${formulaResults.length + 3}`);
+  dataRange.style({
+    verticalAlignment: "center",
+    wrapText: true,
   });
 
   const fileName = `formula_calculations_${
@@ -113,15 +84,8 @@ const createFormulaExcel = async (formulaResults, password) => {
   }_protected.xlsx`;
   const filePath = path.join(reportsDir, fileName);
 
-  // Save with encryption
-  await workbook.xlsx.writeFile(filePath, {
-    filename: filePath,
-    useStyles: true,
-    useSharedStrings: true,
-    password: password, // This is the key for file-level encryption
-    lockStructure: true,
-    lockWindows: true,
-  });
+  // Save with password protection
+  await workbook.toFileAsync(filePath, { password: password });
 
   return filePath;
 };
